@@ -1,0 +1,70 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fashion_app_admin/widgets/banner_widget.dart';
+import 'package:fashion_app_admin/widgets/category_widget.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+
+import '../consts/constants.dart';
+import '../services/utils.dart';
+import 'products_widget.dart';
+import 'text_widget.dart';
+
+class CategoryGridWidget extends StatelessWidget {
+  const CategoryGridWidget(
+      {Key? key,
+        this.crossAxisCount = 4,
+        this.childAspectRatio = 1,
+        this.isInMain = true})
+      : super(key: key);
+  final int crossAxisCount;
+  final double childAspectRatio;
+  final bool isInMain;
+  @override
+  Widget build(BuildContext context) {
+    final Color color = Utils(context).color;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('category').snapshots(),
+
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        } else if (snapshot.connectionState == ConnectionState.active) {
+          if (snapshot.data == null) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(18.0),
+                child: Text('Your store is empty'),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return const Center(
+              child: Text(
+                'Something went wrong',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              ),
+            );
+          }
+        }
+        return GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: isInMain && snapshot.data!.docs.length > 4
+                ? 4
+                : snapshot.data!.docs.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: childAspectRatio,
+              crossAxisSpacing: defaultPadding,
+              mainAxisSpacing: defaultPadding,
+            ),
+            itemBuilder: (context, index) {
+              return CategoryWidget(
+                id: snapshot.data!.docs[index]['id'],
+              );
+            });
+      },
+    );
+  }
+}
